@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@source "./**/*.{js,ts,jsx,tsx}";
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -23,4 +25,349 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+}
+
+/* ========= 认证页面全局样式（原 styled-jsx 迁移） ========= */
+.auth-page {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 装饰性背景元素 */
+.auth-page::before {
+  content: '';
+  position: absolute;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(229, 0, 11, 0.1) 0%, transparent 70%);
+  top: -400px;
+  right: -200px;
+  pointer-events: none;
+}
+
+.auth-page::after {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(229, 0, 11, 0.08) 0%, transparent 70%);
+  bottom: -300px;
+  left: -200px;
+  pointer-events: none;
+}
+
+/* 左侧区域 */
+.auth-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #E5000B 0%, #B80009 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-left::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.brand-container {
+  text-align: center;
+  max-width: 480px;
+  padding: 40px;
+  z-index: 1;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.logo-wrapper {
+  margin-bottom: 32px;
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+.brand-title {
+  color: white !important;
+  margin-bottom: 16px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.brand-subtitle {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 16px !important;
+  display: block;
+  margin-bottom: 40px !important;
+  opacity: 0.9;
+}
+
+.brand-features {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.feature-item {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  padding: 8px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  width: fit-content;
+}
+
+/* 右侧区域 */
+.auth-right {
+  width: 560px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 2;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  background: #fff !important;
+  border-radius: 20px !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08) !important;
+  padding: 8px;
+}
+
+.card-header {
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.welcome-title {
+  color: #1a1a2e !important;
+  margin-bottom: 8px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.3px;
+}
+
+.welcome-subtitle {
+  color: #666 !important;
+  font-size: 14px !important;
+}
+
+/* 表单标签 - 网易风格（轻量、清晰） */
+.login-card .ant-form-item-label > label {
+  color: #4e5969 !important;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
+/* ========= 网易邮箱风格输入框 ========= */
+.custom-input .ant-input,
+.custom-input .ant-input-password {
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid #e5e6eb;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  background: #ffffff;
+  padding: 0 12px;
+}
+
+.custom-input .ant-input-password {
+  padding: 0;
+}
+
+.custom-input .ant-input-password input {
+  padding: 0 12px;
+}
+
+/* hover 时边框加深 */
+.custom-input .ant-input:hover,
+.custom-input .ant-input-password:hover {
+  border-color: #c9cdd4;
+  background: #ffffff;
+}
+
+/* focus 时边框变为主色（网易红），并添加柔和外发光 */
+.custom-input .ant-input:focus,
+.custom-input .ant-input-password:focus-within {
+  border-color: #e33e33;
+  box-shadow: 0 0 0 2px rgba(227, 62, 51, 0.1);
+  background: #ffffff;
+  outline: none;
+}
+
+/* 输入框图标颜色 - 默认灰色，聚焦时变红 */
+.custom-input .ant-input-prefix,
+.custom-input .ant-input-password .ant-input-prefix {
+  color: #9aa4bf;
+  transition: color 0.2s;
+}
+
+.custom-input .ant-input:focus ~ .ant-input-prefix,
+.custom-input .ant-input-password:focus-within .ant-input-prefix {
+  color: #e33e33;
+}
+
+/* 密码框可见性图标 hover 颜色 */
+.custom-input .ant-input-password-icon.anticon:hover {
+  color: #e33e33;
+}
+
+/* 输入框自动填充背景覆盖 */
+.custom-input .ant-input:-webkit-autofill,
+.custom-input .ant-input:-webkit-autofill:hover,
+.custom-input .ant-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  border-color: #e5e6eb;
+  -webkit-text-fill-color: #1f2a3e;
+}
+
+.custom-input .ant-input:focus:-webkit-autofill {
+  border-color: #e33e33;
+}
+
+/* 提交按钮 - 网易风格（圆角、红底、柔和阴影） */
+.submit-button {
+  height: 48px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  background: #e33e33 !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(227, 62, 51, 0.2);
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.submit-button:hover {
+  background: #cc352b !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(227, 62, 51, 0.25);
+}
+
+.submit-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(227, 62, 51, 0.2);
+}
+
+/* 忘记密码链接 - 网易风格 */
+.forgot-password {
+  text-align: center;
+  margin: 16px 0 0;
+}
+
+.forgot-link {
+  color: #4e5969;
+  font-size: 13px;
+  transition: color 0.2s ease;
+}
+
+.forgot-link:hover {
+  color: #e33e33;
+}
+
+/* 分割线（若有第三方登录） */
+.custom-divider {
+  border-color: #f0f0f0 !important;
+  color: #999 !important;
+  font-size: 13px;
+  margin: 24px 0 20px !important;
+}
+
+/* 第三方登录按钮 */
+.social-button {
+  height: 44px;
+  border-radius: 6px;
+  border: 1px solid #e5e6eb !important;
+  background: white !important;
+  color: #4e5969 !important;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.social-button:hover {
+  border-color: #e33e33 !important;
+  color: #e33e33 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(227, 62, 51, 0.08);
+}
+
+/* 动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .auth-right {
+    width: 480px;
+    padding: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-page {
+    flex-direction: column;
+  }
+  
+  .auth-left {
+    min-height: 320px;
+  }
+  
+  .auth-right {
+    width: 100%;
+    padding: 32px 24px;
+  }
+  
+  .brand-container {
+    padding: 24px;
+  }
+  
+  .logo-wrapper svg {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .brand-title {
+    font-size: 28px !important;
+  }
+  
+  .brand-features {
+    display: none;
+  }
 }
