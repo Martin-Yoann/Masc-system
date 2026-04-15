@@ -6,11 +6,10 @@ import {
   StyleProvider,
   createCache,
   extractStyle,
-  type Cache,
 } from "@ant-design/cssinjs";
 
 export default function AntdRegistry({ children }: { children: React.ReactNode }) {
-  const [cache] = useState<Cache>(() => createCache());
+  const [cache] = useState<ReturnType<typeof createCache>>(() => createCache());
 
   useServerInsertedHTML(() => (
     <style
