@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Button, Descriptions, Skeleton, Space } from "antd";
 import { useParams, useRouter } from "next/navigation";
 
@@ -17,28 +17,23 @@ export default function UserDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<BUserDetail | null>(null);
 
-  useEffect(() => {
+  const loadUser = useCallback(async () => {
     if (!id) return;
-    let mounted = true;
     setLoading(true);
     setError(null);
-    bUserDetail(id)
-      .then((res) => {
-        if (!mounted) return;
-        setUser(res.data);
-      })
-      .catch((e: unknown) => {
-        if (!mounted) return;
-        setError(e instanceof ApiError ? e.message : t("common.loadingFailed"));
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [id]);
+    try {
+      const res = await bUserDetail(id);
+      setUser(res.data);
+    } catch (e: unknown) {
+      setError(e instanceof ApiError ? e.message : t("common.loadingFailed"));
+    } finally {
+      setLoading(false);
+    }
+  }, [id, t]);
+
+  useEffect(() => {
+    void loadUser();
+  }, [loadUser]);
 
   return (
     <Space orientation="vertical" size={16} style={{ width: "100%" }}>

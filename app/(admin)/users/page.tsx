@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Button, Input, InputNumber, Space, Table, Tag, Typography } from "antd";
 
 import { ApiError, bUsersList, type BUser, type BPagination } from "@/lib/api";
@@ -47,30 +47,24 @@ export default function UsersPage() {
     [t],
   );
 
-  useEffect(() => {
-    let mounted = true;
+  const fetchList = useCallback(async () => {
     setLoading(true);
     setError(null);
-    bUsersList({ keyword, page, page_size: pageSize })
-      .then((res) => {
-        if (!mounted) return;
-        setRows(res.data.list);
-        setPagination(res.data.pagination);
-      })
-      .catch((e: unknown) => {
-        if (!mounted) return;
-        const msg =
-          e instanceof ApiError ? e.message : t("common.loadingFailed");
-        setError(msg);
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [keyword, page, pageSize]);
+    try {
+      const res = await bUsersList({ keyword, page, page_size: pageSize });
+      setRows(res.data.list);
+      setPagination(res.data.pagination);
+    } catch (e: unknown) {
+      const msg = e instanceof ApiError ? e.message : t("common.loadingFailed");
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }, [keyword, page, pageSize, t]);
+
+  useEffect(() => {
+    void fetchList();
+  }, [fetchList]);
 
   const applySearch = () => {
     const nextSize =

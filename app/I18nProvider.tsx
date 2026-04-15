@@ -13,16 +13,14 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("en");
-
-  useEffect(() => {
+  const [lang, setLangState] = useState<Lang>(() => {
     try {
       const saved = localStorage.getItem(LANG_STORAGE_KEY);
-      if (saved === "zh" || saved === "en") setLangState(saved);
+      return saved === "zh" || saved === "en" ? saved : "en";
     } catch {
-      // ignore
+      return "en";
     }
-  }, []);
+  });
 
   const setLang = useCallback((next: Lang) => {
     setLangState(next);

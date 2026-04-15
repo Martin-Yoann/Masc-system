@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Button, Descriptions, Skeleton, Space, Tag } from "antd";
 import { useParams, useRouter } from "next/navigation";
 
@@ -17,28 +17,23 @@ export default function AdminDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [admin, setAdmin] = useState<BAdminDetail | null>(null);
 
-  useEffect(() => {
+  const loadAdmin = useCallback(async () => {
     if (!id) return;
-    let mounted = true;
     setLoading(true);
     setError(null);
-    bAdminDetail(id)
-      .then((res) => {
-        if (!mounted) return;
-        setAdmin(res.data);
-      })
-      .catch((e: unknown) => {
-        if (!mounted) return;
-        setError(e instanceof ApiError ? e.message : t("common.loadingFailed"));
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [id]);
+    try {
+      const res = await bAdminDetail(id);
+      setAdmin(res.data);
+    } catch (e: unknown) {
+      setError(e instanceof ApiError ? e.message : t("common.loadingFailed"));
+    } finally {
+      setLoading(false);
+    }
+  }, [id, t]);
+
+  useEffect(() => {
+    void loadAdmin();
+  }, [loadAdmin]);
 
   return (
     <Space orientation="vertical" size={16} style={{ width: "100%" }}>
