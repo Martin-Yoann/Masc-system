@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Button, Input, InputNumber, Space, Table, Tag, Typography, message } from "antd";
+import { Alert, Button, Form, Input, InputNumber, Modal, Space, Table, Tag, Typography, message } from "antd";
 import { useRouter } from "next/navigation";
 
 import {
   ApiError,
   bOrderContact,
+  bOrderInvoice,
+  bOrderPay,
   bOrderRefund,
   bOrdersList,
   type BOrderListItem,
@@ -49,6 +51,9 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actingOrderNo, setActingOrderNo] = useState<string | null>(null);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceOrderNo, setInvoiceOrderNo] = useState<string | null>(null);
+  const [invoiceForm] = Form.useForm<{ invoice_no: string; internal_note: string }>();
 
   const fetchList = useCallback(async (nextPage = page, nextPageSize = pageSize) => {
     setLoading(true);
@@ -67,6 +72,22 @@ export default function OrdersPage() {
   useEffect(() => {
     void fetchList(page, pageSize);
   }, [fetchList, page, pageSize]);
+
+  const runOrderAction = useCallback(
+    async (orderNoValue: string, task: () => Promise<unknown>, successText: string) => {
+      setActingOrderNo(orderNoValue);
+      try {
+        await task();
+        message.success(successText);
+        await fetchList();
+      } catch (err: unknown) {
+        message.error(err instanceof ApiError ? err.message : t("common.saveFailed"));
+      } finally {
+        setActingOrderNo(null);
+      }
+    },
+    [fetchList, t],
+  );
 
   const columns = useMemo(
     () => [
@@ -108,30 +129,34 @@ export default function OrdersPage() {
       {
         title: t("common.edit"),
         key: "actions",
-        width: 220,
+        width: 480,
         render: (_: unknown, record: BOrderListItem) => {
           const busy = actingOrderNo === record.order_no;
-          const contacted = Boolean(record.contacted_at);
+          const contacted = Boolean(record.contacted_at) || record.status === "contacted";
           const refunded = Boolean(record.refunded_at) || record.status === "refunded";
+          const canceled = record.status === "canceled";
+          const paid = Boolean(record.paid_at) || record.status === "paid";
+
+          const canContact = !busy && !contacted && !refunded && !canceled;
+          const canRefund = !busy && !refunded && !canceled;
+          const canPay = !busy && !paid && !refunded && !canceled;
+          // Invoice should only be sent after payment and before cancellation/refund.
+          const canInvoice = !busy && paid && !refunded && !canceled;
+          const hasAnyBlocked = !canContact || !canRefund || !canPay || !canInvoice;
 
           return (
             <Space>
               <Button
                 type="link"
-                disabled={contacted || busy}
-                loading={busy && !refunded}
+                disabled={!canContact}
+                loading={busy}
                 onClick={async (e) => {
                   e.stopPropagation();
-                  setActingOrderNo(record.order_no);
-                  try {
-                    await bOrderContact(record.order_no);
-                    message.success(t("orders.contactSuccess"));
-                    await fetchList();
-                  } catch (err: unknown) {
-                    message.error(err instanceof ApiError ? err.message : t("common.saveFailed"));
-                  } finally {
-                    setActingOrderNo(null);
-                  }
+                  await runOrderAction(
+                    record.order_no,
+                    () => bOrderContact(record.order_no),
+                    t("orders.contactSuccess"),
+                  );
                 }}
               >
                 {t("orders.markContacted")}
@@ -139,30 +164,75 @@ export default function OrdersPage() {
               <Button
                 type="link"
                 danger
-                disabled={refunded || busy}
-                loading={busy && refunded}
+                disabled={!canRefund}
+                loading={busy}
                 onClick={async (e) => {
                   e.stopPropagation();
-                  setActingOrderNo(record.order_no);
-                  try {
-                    await bOrderRefund(record.order_no);
-                    message.success(t("orders.refundSuccess"));
-                    await fetchList();
-                  } catch (err: unknown) {
-                    message.error(err instanceof ApiError ? err.message : t("common.saveFailed"));
-                  } finally {
-                    setActingOrderNo(null);
-                  }
+                  await runOrderAction(
+                    record.order_no,
+                    () => bOrderRefund(record.order_no),
+                    t("orders.refundSuccess"),
+                  );
                 }}
               >
                 {t("orders.markRefunded")}
+              </Button>
+              <Button
+                type="link"
+                disabled={!canPay}
+                loading={busy}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await runOrderAction(
+                    record.order_no,
+                    () => bOrderPay(record.order_no),
+                    t("orders.paySuccess"),
+                  );
+                }}
+              >
+                {t("orders.markPaid")}
+              </Button>
+              <Button
+                type="link"
+                disabled={!canInvoice}
+                loading={busy}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setInvoiceOrderNo(record.order_no);
+                  invoiceForm.setFieldsValue({ invoice_no: "", internal_note: "" });
+                  setInvoiceOpen(true);
+                }}
+              >
+                {t("orders.sendInvoice")}
+              </Button>
+              <Button
+                type="link"
+                disabled={!hasAnyBlocked}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const lines: string[] = [];
+                  if (!canContact) lines.push(`- ${t("orders.markContacted")}：当前状态不可操作`);
+                  if (!canRefund) lines.push(`- ${t("orders.markRefunded")}：当前状态不可操作`);
+                  if (!canPay) lines.push(`- ${t("orders.markPaid")}：当前状态不可操作`);
+                  if (!canInvoice) lines.push(`- ${t("orders.sendInvoice")}：仅已支付且未退款/未取消可操作`);
+                  Modal.info({
+                    title: `${t("orders.orderNo")}: ${record.order_no}`,
+                    content: (
+                      <div style={{ whiteSpace: "pre-line" }}>
+                        {lines.length ? lines.join("\n") : "-"}
+                      </div>
+                    ),
+                  });
+                }}
+              >
+                操作说明
               </Button>
             </Space>
           );
         },
       },
     ],
-    [actingOrderNo, fetchList, t],
+    [actingOrderNo, invoiceForm, runOrderAction, t],
   );
 
   const applySearch = () => {
@@ -251,6 +321,49 @@ export default function OrdersPage() {
         })}
         onChange={(p) => setPage(p.current ?? 1)}
       />
+
+      <Modal
+        title={t("orders.sendInvoice")}
+        open={invoiceOpen}
+        onCancel={() => setInvoiceOpen(false)}
+        onOk={async () => {
+          if (!invoiceOrderNo) return;
+          try {
+            const values = await invoiceForm.validateFields();
+            await runOrderAction(
+              invoiceOrderNo,
+              () =>
+                bOrderInvoice(invoiceOrderNo, {
+                  invoice_no: values.invoice_no.trim(),
+                  internal_note: values.internal_note.trim(),
+                }),
+              t("orders.invoiceSuccess"),
+            );
+            setInvoiceOpen(false);
+          } catch {
+            // validation handled by form
+          }
+        }}
+        confirmLoading={actingOrderNo === invoiceOrderNo}
+        destroyOnHidden
+      >
+        <Form form={invoiceForm} layout="vertical">
+          <Form.Item
+            name="invoice_no"
+            label={t("orders.invoiceNo")}
+            rules={[{ required: true, message: t("common.required") }]}
+          >
+            <Input placeholder={t("orders.invoiceNoPlaceholder")} />
+          </Form.Item>
+          <Form.Item
+            name="internal_note"
+            label={t("orders.internalNote")}
+            rules={[{ required: true, message: t("common.required") }]}
+          >
+            <Input.TextArea rows={3} placeholder={t("orders.internalNotePlaceholder")} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </>
   );
 }

@@ -374,3 +374,23 @@ export async function bOrderContact(orderId: number | string) {
   });
 }
 
+export async function bOrderPay(orderId: number | string) {
+  return apiFetch<null>(`${buildBOrderDetailPath(orderId)}/pay`, {
+    method: "POST",
+    isB: true,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export async function bOrderInvoice(
+  orderId: number | string,
+  input: { invoice_no: string; internal_note: string },
+) {
+  return apiFetch<null>(`${buildBOrderDetailPath(orderId)}/invoice`, {
+    method: "POST",
+    isB: true,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
